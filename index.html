@@ -129,7 +129,8 @@
     </div>
     <canvas id="canvas" width="1000" height="800"></canvas>
     <div id="rain-container" aria-hidden="true"></div>
-    <audio id="bgm" src="music.mp3" preload="auto" loop>
+    <!-- 关键1：添加controls属性，确保音频元素可交互 -->
+    <audio id="bgm" src="music.mp3" preload="auto" loop controls style="display: none;"></audio>
     <button id="musicBtn" type="button">▶</button>
 
     <script>
@@ -137,6 +138,25 @@
         const ctx = canvas.getContext('2d');
         const audio = document.getElementById('bgm');
         const musicBtn = document.getElementById('musicBtn');
+
+        // 关键2：提前触发音频加载（无播放，仅预加载）
+        document.addEventListener('DOMContentLoaded', () => {
+            // 尝试预加载音频，不播放
+            audio.load();
+            // 修复微信等浏览器的音频播放限制
+            document.addEventListener('touchstart', initAudioContext, { once: true });
+            document.addEventListener('click', initAudioContext, { once: true });
+        });
+
+        // 初始化音频上下文（解决移动端音频静音问题）
+        function initAudioContext() {
+            if (window.AudioContext) {
+                const audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+        }
 
         const BASE = { w: 1000, h: 800 };
         function setupCanvas() {
@@ -229,14 +249,35 @@
         function clearCanvas(){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.restore(); applyTransform(); }
         function drawBackground(){ }
 
-        // 音频控制
+        // 音频控制 - 关键3：增强播放逻辑，添加错误处理
         function updateMusicBtn() {
             musicBtn.textContent = audio.paused ? '▶' : '⏸';
         }
 
+        // 修复播放逻辑，添加兼容处理
+        async function playAudio() {
+            try {
+                // 解决AudioContext挂起问题
+                if (window.AudioContext) {
+                    const audioCtx = new AudioContext();
+                    if (audioCtx.state === 'suspended') {
+                        await audioCtx.resume();
+                    }
+                }
+                // 尝试播放音频
+                await audio.play();
+                updateMusicBtn();
+                console.log('音频播放成功');
+            } catch (err) {
+                console.error('音频播放失败:', err);
+                // 降级方案：提示用户手动点击播放
+                alert('自动播放失败，请点击右上角的播放按钮手动播放音乐～');
+            }
+        }
+
         musicBtn.addEventListener('click', () => {
             if (audio.paused) {
-                audio.play().then(updateMusicBtn);
+                playAudio();
             } else {
                 audio.pause();
                 updateMusicBtn();
@@ -270,9 +311,8 @@
 
             startBtn.addEventListener('click', () => {
                 intro.style.display = 'none';
-                // 点击后自动播放音乐（浏览器允许）
-                audio.play().catch(err => console.log('音频播放失败', err));
-                updateMusicBtn();
+                // 点击后触发播放
+                playAudio();
                 startCakeRain();
                 drawScene();
             });
