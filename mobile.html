@@ -44,8 +44,9 @@
     </div>
     <canvas id="canvas" width="1000" height="800"></canvas>
     <div id="rain-container" aria-hidden="true"></div>
-    <audio id="bgm" src="music.mp3" preload="auto" loop>
+    <audio id="bgm" src="music.mp3" preload="auto" loop></audio>
     <button id="musicBtn" type="button">▶</button>
+
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -54,24 +55,27 @@
         function applyTransform(){ const cw=canvas.width; const ch=canvas.height; const base=Math.min(cw/BASE.w, ch/BASE.h); const scale=base * cakeScale(); ctx.setTransform(1,0,0,1,0,0); ctx.translate(cw/2, ch/2 - offsetPx()); ctx.scale(scale, -scale); ctx.lineJoin='round'; ctx.lineCap='round'; }
         ctx.lineJoin='round'; ctx.lineCap='round';
         const sleep=(ms)=>new Promise(r=>setTimeout(r,ms)); const fast=(ms)=>Math.max(16, ms*(CONFIG.timing.speedFactor));
+
         const CONFIG={
             // 祝福文案：显示在蛋糕上方的文本
-            greetingText:'洋洋  Happy Birthday',
+            greetingText:'洋洋 Happy Birthday',
+
             // 蛋糕雨参数
             cakeRain:{
                 // 下落的表情/图标集合（会随机选择）
-                icons:['🍰','🎂','🎈','🎉','🎊','🍬','🍭'],
+               icons:['🍰','🎂','🎈','🎉','🎊','🍬','🍭'],
                 // 生成间隔（毫秒，越小越密集）
-                intervalMs:250,
+                intervalMs:300,
                 // 初始喷发数量（进入时快速填充屏幕）
                 initialBurst:20,
                 // 图标最小/最大字号（像素）
-                sizeMin:18,
-                sizeMax:42,
+                sizeMin:13,
+                sizeMax:36,
                 // 下落总时长上下限（秒，越小越快）
                 durationMin:6,
                 durationMax:12
             },
+
             // 样式与布局（按设备自适配）
             style:{
                 // 桌面端整体缩放比例（>1 放大）
@@ -87,10 +91,11 @@
                 // 移动端是否绘制描边（小屏细描边可提升清晰度）
                 showStrokeMobile:false
             },
+
             // 绘制与动效节奏
             timing:{
                 // 速度系数：fast(ms) = max(16, ms * speedFactor)，值越大动画越慢
-                speedFactor:0.8
+                speedFactor:8.0
             }
         };
         function isMobile(){ return (window.innerWidth||0) < 769; }
@@ -98,6 +103,7 @@
         function offsetPx(){ return isMobile()? CONFIG.style.offsetMobilePx : CONFIG.style.offsetDesktopPx; }
         function strokesEnabled(){ return isMobile()? CONFIG.style.showStrokeMobile : CONFIG.style.showStrokeDesktop; }
         let playBgm;
+
         function radians(d){ return (d*Math.PI)/180; }
         function rgbColor(r,g,b,a=1){ return `rgba(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)}, ${a})`; }
         function drawX(a,i){ const t=radians(i); return a*Math.cos(t); }
@@ -108,6 +114,7 @@
         function fillShape(points,color){ if(!points||!points.length){return;} ctx.save(); ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=1;i<points.length;i++){ ctx.lineTo(points[i].x,points[i].y);} ctx.closePath(); ctx.fillStyle=color; ctx.fill(); ctx.restore(); }
         function clearCanvas(){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.restore(); applyTransform(); }
         function drawBackground(){ }
+
         function setupAudio(){ const audio=document.getElementById('bgm'); const btn=document.getElementById('musicBtn'); const update=()=>{ btn.textContent = audio.paused? '▶':'⏸'; }; btn.addEventListener('click',()=>{ if(audio.paused){ audio.play(); } else { audio.pause(); } update(); }); audio.addEventListener('play',update); audio.addEventListener('pause',update); update(); playBgm=()=>{ audio.play().finally(update); }; }
         function startCakeRain(cfg=CONFIG.cakeRain){ const container=document.getElementById('rain-container'); const cakes=Array.isArray(cfg.icons)&&cfg.icons.length? cfg.icons:['🍰','🎂']; function spawn(){ const el=document.createElement('span'); el.className='cake'; el.textContent=cakes[Math.floor(Math.random()*cakes.length)]; const size=Math.random()*(cfg.sizeMax-cfg.sizeMin)+cfg.sizeMin; el.style.left=Math.random()*100+'vw'; el.style.fontSize=size+'px'; const duration=Math.random()*(cfg.durationMax-cfg.durationMin)+cfg.durationMin; el.style.setProperty('--duration', duration.toFixed(2)+'s'); el.style.setProperty('--delay', (Math.random()*2).toFixed(2)+'s'); container.appendChild(el); setTimeout(()=>el.remove(), (cfg.durationMax+4)*1000); } setInterval(spawn, Math.max(60, cfg.intervalMs)); for(let i=0;i<(cfg.initialBurst||0);i++) setTimeout(spawn, i*120); }
         function initIntro(){ const intro=document.getElementById('intro'); const startBtn=document.getElementById('startBtn'); if(!startBtn) return; startBtn.addEventListener('click', ()=>{ intro.style.display='none'; if(typeof playBgm==='function') playBgm(); startCakeRain(); drawScene(); }); }
@@ -117,6 +124,7 @@
             await sleep(fast(200));
             await drawGreeting(greetingY);
         }
+
         setupCanvas();
         window.addEventListener('resize', setupCanvas);
         setupAudio();
