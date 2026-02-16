@@ -348,15 +348,16 @@
 				card.style.opacity = '0'
 				card.style.transition = 'transform 600ms ease, opacity 600ms ease, top 600ms ease'
 
-				card.innerHTML = `
+card.innerHTML = `
 					<div class="card-header">
 						<div class="window-controls">
 							<button class="control close" type="button" aria-label="关闭"></button>
 							<button class="control minimize" type="button" aria-label="最小化"></button>
 							<button class="control maximize" type="button" aria-label="最大化"></button>
 						</div>
-						<div class="card-title">❤️特别的话❤️</div>
-					</div>天天开心</div>
+						<div class="card-title">❤️ 特别的话 ❤️</div>
+					</div>
+					<div class="card-body" style="font-size: 24px; font-weight: bold; text-align: center; color: #fff; padding: 24px;">天天开心</div>
 				`
 
 				const state = {
